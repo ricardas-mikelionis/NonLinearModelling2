@@ -2,7 +2,7 @@ import math
 
 
 def f_function(x_f, t_f, a, c, d):
-    com_a = complex(a^2, 1)
+    com_a = complex(pow(a, 2), 1)
     com_c = complex(0, c)
     com_d = complex(0, d)
     f = u_deriv_t(x_f) - (com_a * u_sqr_deriv_x(x_f, t_f)) \
