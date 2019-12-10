@@ -1,5 +1,7 @@
 import math
 
+from numpy.random import random
+
 import Functions
 
 
@@ -48,34 +50,32 @@ def second_test(x, t, h, t_interval, a, c, d):
     return residual
 
 
-def third_test(t, t_interval, n, a, c, d, delta):
-    print 'Third Test'
+def third_test(n, t_interval, a):
+    print 'Third test'
 
-    print "Pradines reiksmes"
-    u_current = Functions.u_precise(t, n)
-    print u_current
+    h = 1.0 / n
+    y = [complex(0, 0) for i in range(n + 1)]
+    f_big = [0 for i in range(n+1)]
+    c_big = Functions.c_function(h, t_interval, a)
+    for i in range(1, n):
+        y[i] = complex(random(), random())
 
-    print "Tikimasi reiksmiu:"
-    u_new_percise = Functions.u_precise(t + t_interval, n)
-    print u_new_percise
+    for j in range(1, n):
+        f_big[j] = c_big * y[j] - y[j + 1] - y[j - 1]
 
-    print "Gauta:"
-    u_new_calc = Functions.u_new_function(n, t, t_interval, a, c, d, Functions.u_precise(0, n), u_current, delta)
-    print u_new_calc
+    y_new = Functions.thomas_algorithm(n, t_interval, a, f_big)
 
     max_delta = 0.0
+    for i in range(0, n+1):
+        delta_y = abs(y_new[i] - y[i])
+        if delta_y > max_delta:
+            max_delta = delta_y
 
-    for i in range (0, n+1):
-        delta_u = abs(u_new_calc[i]) - abs(u_new_percise[i])
-        if delta_u.real > max_delta:
-            max_delta = delta_u.real
-
-    print "Netiktis:"
     print max_delta
 
 
-def fourth_test(t, n, t_interval, a, c, d, delta):
-    print 'Fourth Test'
+def global_test(t, n, t_interval, a, c, d, delta):
+    print 'Global Test'
 
     print "Pradines reiksmes"
     u_current = Functions.u_precise(t, n)
@@ -86,15 +86,16 @@ def fourth_test(t, n, t_interval, a, c, d, delta):
     print u_new_percise
 
     print "Gauta:"
-    u_new_calc = Functions.u_new_function(n, t, t_interval, a, c, d, Functions.u_precise(0, n), u_current, delta)
+    f_big = Functions.f_big_list(n, t_interval, t, u_current, u_current, a, c, d)
+    u_new_calc = Functions.u_new_function(n, t_interval, a, u_current, delta, f_big)
     print u_new_calc
 
     max_delta = 0.0
 
-    for i in range (0, n+1):
-        delta_u = abs(u_new_calc[i]) - abs(u_new_percise[i])
-        if delta_u.real > max_delta:
-            max_delta = delta_u.real
+    for i in range(0, n+1):
+        delta_u = abs(u_new_calc[i] - u_new_percise[i])
+        if delta_u > max_delta:
+            max_delta = delta_u
 
     print "Netiktis:"
     print max_delta
@@ -105,20 +106,23 @@ def fourth_test(t, n, t_interval, a, c, d, delta):
 
     u_current = Functions.u_precise(t, n)
     u_new_percise = Functions.u_precise(t + t_interval, n)
-    u_new_calc = Functions.u_new_function(n, t, t_interval, a, c, d, Functions.u_precise(0, n), u_current, delta)
+    f_big = Functions.f_big_list(n, t_interval, t, u_current, u_current, a, c, d)
+    u_new_calc = Functions.u_new_function(n, t_interval, a, u_current, delta, f_big)
+
+    print u_new_calc
 
     max_delta_2 = 0.0
 
-    for i in range (0, n+1):
-        delta_u = abs(u_new_calc[i]) - abs(u_new_percise[i])
-        if delta_u.real > max_delta_2:
-            max_delta_2 = delta_u.real
+    for i in range(0, n+1):
+        delta_u = abs(u_new_calc[i] - u_new_percise[i])
+        if delta_u > max_delta_2:
+            max_delta_2 = delta_u
 
     print "Netiktis:"
     print max_delta_2
 
     print "Netiktis sumazejo ", max_delta/max_delta_2, " kartu"
 
-def global_test():
+
 
 

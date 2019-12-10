@@ -49,7 +49,9 @@ def u_abs_sqr(x_f, t_f):
 
 def c_function(h, t_interval, a):
     com = complex(math.pow(a, 2), 1)
-    c = 2 + ((2 * math.pow(h, 2))/(t_interval * com))
+    bott = t_interval * com
+    top = 2 * math.pow(h, 2)
+    c = 2 + (top/bott)
     return c
 
 
@@ -80,35 +82,38 @@ def u_precise(t, n):
 
 
 def alpha_array(n, t_interval, a):
-    h = 1 / n
+    h = 1.0 / n
     c_big = c_function(h, t_interval, a)
-    alpha_array = [0 for i in range(n + 1)]
+    aph_array = [0 for i in range(n + 1)]
 
-    for i in range(1, n):
-        alpha_array[i] = 1 / (c_big - alpha_array[i - 1])
-    return alpha_array
+    for i in range(2, n):
+        aph_array[i] = 1 / (c_big - aph_array[i - 1])
+    return aph_array
 
 
-def u_new_function(n, t_current, t_interval, a, c, d, u, u_r, delta):
-    h = 1 / n
-    beta_array = [0 for i in range(n + 1)]
+def f_big_list(n, t_interval, t_current, u, u_r, a, c, d):
+    h = 1.0 / n
+    f_big_array = [0 for i in range(n + 1)]
+    for i in range(1, n + 1):
+        u_r_abs_sqr = math.pow(u_r[i - 1].real, 2) * math.pow(u_r[i - 1].imag, 2)
+        u_abs = u_abs_sqr(h * i - 1, 0)
+        f_r_small = f_function(h * i - 1, t_current, a, c, d)
+        f_big_array[i] = f_big_function(u[i - 1], u[i], u[i - 2], u_r[i - 1], u_abs, u_r_abs_sqr,
+                                        f_function(h * i - 1, 0, a, c, d), f_r_small, a, c, d, h, t_interval)
+
+    return f_big_array
+
+
+def u_new_function(n, t_interval, a, u_r, delta, f_big):
     u_new = [complex(0, 0) for i in range(n+1)]
-    c_big = c_function(h, t_interval, a)
-    aph_array = alpha_array(n, t_interval, a)
     new_old_deltas = [0 for i in range(n + 1)]
     cont = True
 
     while cont:
-        for i in range(1, n+1):
-            u_r_abs_sqr = math.pow(u_r[i-1].real, 2) * math.pow(u_r[i-1].imag, 2)
-            u_abs = u_abs_sqr(h * i-1, 0)
-            f_r_small = f_function(h*i-1, t_current, a, c, d)
-            f_big = f_big_function(u[i-1], u[i], u[i-2], u_r[i-1], u_abs, u_r_abs_sqr,
-                                   f_function(h * i-1, 0, a, c, d), f_r_small, a, c, d, h, t_interval)
-            beta_array[i] = (f_big + beta_array[i - 1]) / (c_big - aph_array[i - 1])
 
-        for k in reversed(range(1, n)):
-            u_new[k] = (aph_array[k+1] * u_new[k+1]) + beta_array[k+1]
+        u_new = thomas_algorithm(n, t_interval, a, f_big)
+
+        for k in range(1, n):
             delta_new_old = u_new[k] - u_r[k]
             new_old_deltas[k] = delta_new_old.real
 
@@ -120,12 +125,39 @@ def u_new_function(n, t_current, t_interval, a, c, d, u, u_r, delta):
     return u_new
 
 
+def thomas_algorithm(n, t_interval, a, f_big):
+    h = 1.0 / n
+    aph_array = alpha_array(n, t_interval, a)
+    c_big = c_function(h, t_interval, a)
+    beta_array = [0 for i in range(n + 1)]
+    u_new = [complex(0, 0) for i in range(n+1)]
+
+    for i in range(2, n+1):
+        top = f_big[i] + beta_array[i - 1]
+        bottom = c_big - aph_array[i - 1]
+        beta_array[i] = top / bottom
+
+    for k in reversed(range(1, n)):
+        print "k", k
+        print "alpha", aph_array[k+1]
+        print "u_new_prev", u_new[k+1]
+        print "beta", beta_array[k+1]
+        print "u_new_before", u_new[k]
+        u_new[k] = (aph_array[k + 1] * u_new[k + 1]) + beta_array[k + 1]
+        print "alpha * u_new[k+1]",aph_array[k + 1] * u_new[k + 1]
+        print "u_new_after", u_new[k]
+
+    return u_new
+
+
 def full_algorithm(t_interval, t_total, n, a, c, d, delta):
     t = 0
     u = u_precise(t, n)
+
     while t < t_total:
         u_r = list(u)
-        u_new = u_new_function(n, t, t_interval, a, c, d, u, u_r, delta)
+        f_big = f_big_list(n, t_interval, t, u, u_r, a, c, d)
+        u_new = u_new_function(n, t_interval, a, u_r, delta, f_big)
         u = list(u_new)
         t = t + t_interval
 
