@@ -3,6 +3,7 @@
 # Lygtis F, algoritmas F2, krastines salygos I
 import math
 import Tests
+import Functions
 
 
 # Apsirasomos konstantos:
@@ -31,3 +32,7 @@ print Tests.first_test(x, t, h/10, t_interval/10, a, c, d) / Tests.first_test(x,
 print 'Second Test'
 print Tests.second_test(x, t, h, t_interval, a, c, d) / Tests.second_test(x, t, h/10, t_interval/10, a, c, d)
 print Tests.second_test(x, t, h/10, t_interval/10, a, c, d) / Tests.second_test(x, t, h/100, t_interval/100, a, c, d)
+
+Tests.third_test(t, t_interval, n, a, c, d, delta)
+
+Tests.fourth_test(t, n, t_interval, a, c, d, delta)

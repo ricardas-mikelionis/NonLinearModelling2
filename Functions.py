@@ -67,3 +67,66 @@ def f_big_function(u_j, u_j_p_1, u_j_m_1, u_r_j, u_j_abs_sqr, u_r_j_abs_sqr, f, 
     f_big = u_j_p_1 - (2 * u_j) + u_j_m_1 + (h_a * ((two_tau * u_j) + (com_c * ic_part) + (com_d * id_part) + f_part))
 
     return f_big
+
+
+def u_precise(t, n):
+    u = [0 for i in range(n + 1)]
+    h = 1.0 / n
+
+    for j in range(0, n + 1):
+        u[j] = u_function(h * j, t)
+
+    return u
+
+
+def alpha_array(n, t_interval, a):
+    h = 1 / n
+    c_big = c_function(h, t_interval, a)
+    alpha_array = [0 for i in range(n + 1)]
+
+    for i in range(1, n):
+        alpha_array[i] = 1 / (c_big - alpha_array[i - 1])
+    return alpha_array
+
+
+def u_new_function(n, t_current, t_interval, a, c, d, u, u_r, delta):
+    h = 1 / n
+    beta_array = [0 for i in range(n + 1)]
+    u_new = [complex(0, 0) for i in range(n+1)]
+    c_big = c_function(h, t_interval, a)
+    aph_array = alpha_array(n, t_interval, a)
+    new_old_deltas = [0 for i in range(n + 1)]
+    cont = True
+
+    while cont:
+        for i in range(1, n+1):
+            u_r_abs_sqr = math.pow(u_r[i-1].real, 2) * math.pow(u_r[i-1].imag, 2)
+            u_abs = u_abs_sqr(h * i-1, 0)
+            f_r_small = f_function(h*i-1, t_current, a, c, d)
+            f_big = f_big_function(u[i-1], u[i], u[i-2], u_r[i-1], u_abs, u_r_abs_sqr,
+                                   f_function(h * i-1, 0, a, c, d), f_r_small, a, c, d, h, t_interval)
+            beta_array[i] = (f_big + beta_array[i - 1]) / (c_big - aph_array[i - 1])
+
+        for k in reversed(range(1, n)):
+            u_new[k] = (aph_array[k+1] * u_new[k+1]) + beta_array[k+1]
+            delta_new_old = u_new[k] - u_r[k]
+            new_old_deltas[k] = delta_new_old.real
+
+        if max(new_old_deltas) < delta:
+            cont = False
+        else:
+            u_r = list(u_new)
+
+    return u_new
+
+
+def full_algorithm(t_interval, t_total, n, a, c, d, delta):
+    t = 0
+    u = u_precise(t, n)
+    while t < t_total:
+        u_r = list(u)
+        u_new = u_new_function(n, t, t_interval, a, c, d, u, u_r, delta)
+        u = list(u_new)
+        t = t + t_interval
+
+    return u

@@ -48,44 +48,77 @@ def second_test(x, t, h, t_interval, a, c, d):
     return residual
 
 
-def third_test(n, h, t_interval, a, c, d, delta):
-    alpha_array = [0 for i in range(n + 1)]
-    beta_array = [0 for i in range(n + 1)]
-    t = 0
-    cont = True
+def third_test(t, t_interval, n, a, c, d, delta):
+    print 'Third Test'
 
-    u = [0 for i in range(n + 1)]
-    u_new = [0 for i in range(n + 1)]
-    u_alph_sqr = [0 for i in range(n + 1)]
-    f_small = [0 for i in range(n + 1)]
-    new_old_deltas = [0 for i in range(n + 1)]
-    c_big = Functions.c_function(h, t_interval, a)
+    print "Pradines reiksmes"
+    u_current = Functions.u_precise(t, n)
+    print u_current
 
-    for j in range(0, n + 1):
-        u[j] = Functions.u_function(h * j, 0)
-        u_alph_sqr[j] = Functions.u_abs_sqr(h * j, 0)
-        f_small[j] = Functions.f_function(h * j, 0, a, c, d)
+    print "Tikimasi reiksmiu:"
+    u_new_percise = Functions.u_precise(t + t_interval, n)
+    print u_new_percise
 
-    u_r = u.copy()
+    print "Gauta:"
+    u_new_calc = Functions.u_new_function(n, t, t_interval, a, c, d, Functions.u_precise(0, n), u_current, delta)
+    print u_new_calc
 
-    for i in range(1, n):
-        alpha_array[i] = 1 / (c_big * alpha_array[i - 1])
+    max_delta = 0.0
 
-    while cont:
-        for i in range(1, n):
-            u_r_abs_sqr = Functions.u_abs_sqr(i * h, t)
-            f_r_small = Functions.f_function(h*i, t, a, c, d)
-            f_big = Functions.f_big_function(u[i], u[i+1], u[i-1], u_r[i], u_alph_sqr[i], u_r_abs_sqr,
-                                             f_small[i], f_r_small, a, c, d, h, t_interval)
-            beta_array[i] = (f_big + beta_array[i - 1]) / (c_big * alpha_array[i - 1])
+    for i in range (0, n+1):
+        delta_u = abs(u_new_calc[i]) - abs(u_new_percise[i])
+        if delta_u.real > max_delta:
+            max_delta = delta_u.real
 
-        for k in range(1, n):
-            u_new[n+1-k] = (alpha_array[n-k] * u_new[n-k]) + beta_array[n-k]
-            new_old_deltas[n+1-k] = u_new[n + 1 - k] - u_r[n + 1 - k]
+    print "Netiktis:"
+    print max_delta
 
-        if max(new_old_deltas) < delta:
-            cont = False
-        else:
-            t = t + t_interval
 
-    return u_new[5]
+def fourth_test(t, n, t_interval, a, c, d, delta):
+    print 'Fourth Test'
+
+    print "Pradines reiksmes"
+    u_current = Functions.u_precise(t, n)
+    print u_current
+
+    print "Tikimasi reiksmiu:"
+    u_new_percise = Functions.u_precise(t + t_interval, n)
+    print u_new_percise
+
+    print "Gauta:"
+    u_new_calc = Functions.u_new_function(n, t, t_interval, a, c, d, Functions.u_precise(0, n), u_current, delta)
+    print u_new_calc
+
+    max_delta = 0.0
+
+    for i in range (0, n+1):
+        delta_u = abs(u_new_calc[i]) - abs(u_new_percise[i])
+        if delta_u.real > max_delta:
+            max_delta = delta_u.real
+
+    print "Netiktis:"
+    print max_delta
+
+    print"h, bei t zingsniai sumazinami 10 kartu"
+    n = n*10
+    t_interval = t_interval/10
+
+    u_current = Functions.u_precise(t, n)
+    u_new_percise = Functions.u_precise(t + t_interval, n)
+    u_new_calc = Functions.u_new_function(n, t, t_interval, a, c, d, Functions.u_precise(0, n), u_current, delta)
+
+    max_delta_2 = 0.0
+
+    for i in range (0, n+1):
+        delta_u = abs(u_new_calc[i]) - abs(u_new_percise[i])
+        if delta_u.real > max_delta_2:
+            max_delta_2 = delta_u.real
+
+    print "Netiktis:"
+    print max_delta_2
+
+    print "Netiktis sumazejo ", max_delta/max_delta_2, " kartu"
+
+def global_test():
+
+
