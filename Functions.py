@@ -1,10 +1,11 @@
 import math
+import Constants
 
 
-def f_function(x_f, t_f, a, c, d):
-    com_a = complex(pow(a, 2), 1)
-    com_c = complex(0, c)
-    com_d = complex(0, d)
+def f_function(x_f, t_f):
+    com_a = complex(pow(Constants.A, 2), 1)
+    com_c = complex(0, Constants.C)
+    com_d = complex(0, Constants.D)
     f = u_deriv_t(x_f) - (com_a * u_sqr_deriv_x(x_f, t_f)) \
         - (com_c * u_function(x_f, t_f)) \
         - (com_d * u_abs_sqr(x_f, t_f) * u_function(x_f, t_f))
@@ -52,77 +53,73 @@ def u_abs_sqr(x_f, t_f):
     return (math.pow(t_f, 2) + 1) * (math.pow(math.sin(math.pi * x_f), 2))
 
 
-def c_function(h, t_interval, a):
-    com = complex(math.pow(a, 2), 1)
-    bott = t_interval * com
-    top = 2 * math.pow(h, 2)
+def c_function():
+    com = complex(math.pow(Constants.A, 2), 1)
+    bott = Constants.T_INTERVAL * com
+    top = 2 * math.pow(Constants.H, 2)
     c = 2 + (top/bott)
 
     return c
 
 
-def f_big_function(u_j, u_j_p_1, u_j_m_1, u_r_j, u_j_abs_sqr, u_r_j_abs_sqr, f, f_r, a, c, d, h, t_interval):
-    com_d = complex(0, d)
-    com_a = complex(math.pow(a, 2), 1)
-    com_c = complex(0, c)
+def f_big_function(u_j, u_j_p_1, u_j_m_1, u_r_j, u_j_abs_sqr, u_r_j_abs_sqr, f, f_r):
+    com_d = complex(0, Constants.D)
+    com_a = complex(math.pow(Constants.A, 2), 1)
+    com_c = complex(0, Constants.C)
 
     f_part = f + f_r
     id_part = u_r_j_abs_sqr * u_r_j + u_j_abs_sqr * u_j
     ic_part = u_r_j + u_j
-    h_a = math.pow(h, 2) / com_a
-    two_tau = 2 / t_interval
+    h_a = math.pow(Constants.H, 2) / com_a
+    two_tau = 2 / Constants.T_INTERVAL
 
     f_big = u_j_p_1 - (2 * u_j) + u_j_m_1 + (h_a * ((two_tau * u_j) + (com_c * ic_part) + (com_d * id_part) + f_part))
 
     return f_big
 
 
-def u_precise(t, n):
-    u = [0 for i in range(n + 1)]
-    h = 1.0 / n
+def u_precise(t):
+    u = []
 
-    for j in range(0, n + 1):
-        u[j] = u_function(h * j, t)
+    for j in range(0, Constants.N + 1):
+        u.append(u_function(Constants.H * j, t))
 
     return u
 
 
-def alpha_array(n, t_interval, a):
-    h = 1.0 / n
-    c_big = c_function(h, t_interval, a)
-    aph_array = [0 for i in range(n + 1)]
+def alpha_array():
+    c_big = c_function()
+    aph_array = [0, 0] #Alpha_0 neegzistuoja, o Alpha_1 = 0, del I K.S. palikta del kodo skaitomumo
 
-    for i in range(2, n):
-        aph_array[i] = 1 / (c_big - aph_array[i - 1])
+    for i in range(2, Constants.N):
+        aph_array.append(1 / (c_big - aph_array[i - 1]))
 
+    aph_array.append(0)  # Alpha_N = 0 del I K.S
     return aph_array
 
 
-def f_big_list(n, t_interval, t_current, u, u_r, a, c, d):
-    h = 1.0 / n
-    f_big_array = []
-    f_big_array.append(0j) #Nulinis F_big nenaudojamas
+def f_big_list(t_current, u, u_r):
+    f_big_array = [0j]  # Pirmas narys bus nenaudojamas(palikta del kodo skaitomumo
 
-    for i in range(1, n):
+    for i in range(1, Constants.N):
         u_r_abs_sqr = math.pow(u_r[i].real, 2) + math.pow(u_r[i].imag, 2)
         u_abs = math.pow(u[i].real, 2) + math.pow(u[i].imag, 2)
-        f_small = f_function(h * i, t_current, a, c, d)
-        f_r_small = f_function(h * i, t_current + t_interval, a, c, d)
-        f_big_array.append(f_big_function(u[i], u[i + 1], u[i - 1], u_r[i], u_abs, u_r_abs_sqr,
-                                          f_small, f_r_small, a, c, d, h, t_interval))
+        f_small = f_function(Constants.H * i, t_current)
+        f_r_small = f_function(Constants.H * i, t_current + Constants.T_INTERVAL)
+        f_big_array.append(f_big_function(u[i], u[i + 1], u[i - 1], u_r[i], u_abs, u_r_abs_sqr, f_small, f_r_small))
 
     return f_big_array
 
 
-def u_new_function(n, t_interval, a, u_r, delta, f_big):
-    u_new = [complex(0, 0) for i in range(n+1)]
+def u_new_function(u_r, f_big):
+    u_new = []
     cont = True
 
     while cont:
-        u_new = thomas_algorithm(n, t_interval, a, f_big)
+        u_new = thomas_algorithm(f_big)
         max_diff = max_difference(u_new, u_r)
 
-        if max_diff < delta:
+        if max_diff < Constants.DELTA:
             cont = False
         else:
             u_r = list(u_new)
@@ -130,35 +127,34 @@ def u_new_function(n, t_interval, a, u_r, delta, f_big):
     return u_new
 
 
-def thomas_algorithm(n, t_interval, a, f_big):
-    h = 1.0 / n
-    aph_array = alpha_array(n, t_interval, a)
-    c_big = c_function(h, t_interval, a)
-    beta_array = [0 for i in range(n + 1)]
-    u_new = [complex(0, 0) for i in range(n+1)]
+def thomas_algorithm(f_big):
+    aph_array = alpha_array()
+    c_big = c_function()
+    beta_array = [0, 0]  # beta_0 - neegzistuoja, o beta_1 = 0 del I K.S.
+    u_new = [complex(0, 0) for i in range(Constants.N + 1)]
 
-    for i in range(2, n+1):
+    for i in range(2, Constants.N + 1):
         top = f_big[i - 1] + beta_array[i - 1]
         bottom = c_big - aph_array[i - 1]
-        beta_array[i] = top / bottom
+        beta_array.append(top / bottom)
 
-    for k in reversed(range(1, n)):
+    for k in reversed(range(1, Constants.N)):
         u_new[k] = (aph_array[k + 1] * u_new[k + 1]) + beta_array[k + 1]
 
     return u_new
 
 
-def full_algorithm(t_interval, t_total, n, a, c, d, delta):
+def full_algorithm(t_total):
     t = 0
-    u = u_precise(t, n)
+    u = u_precise(t)
     max_difference_array = []
     u_r = list(u)
 
     while t < t_total:
-        f_big = f_big_list(n, t_interval, t, u, u_r, a, c, d)
-        u_new = u_new_function(n, t_interval, a, u_r, delta, f_big)
-        t = t + t_interval
-        u = u_precise(t, n)
+        f_big = f_big_list(t, u, u_r)
+        u_new = u_new_function(u_r, f_big)
+        t = t + Constants.T_INTERVAL
+        u = u_precise(t)
         max_difference_array.append(max_difference(u_new, u))
         u_r = list(u_new)
 
@@ -174,3 +170,51 @@ def max_difference(u_new, u_old):
             max_diff = difference
 
     return max_diff
+
+
+def first_test(x, t):
+    u_j = u_function(x, t)
+    u_j_abs_sqr = u_abs_sqr(x, t)
+    u_j_p_1 = u_function(x + Constants.H, t)
+    u_j_m_1 = u_function(x - Constants.H, t)
+    u_r_j = u_function(x, t + Constants.T_INTERVAL)
+    u_r_j_abs_sqr = u_abs_sqr(x, t + Constants.T_INTERVAL)
+    u_r_j_p_1 = u_function(x + Constants.H, t + Constants.T_INTERVAL)
+    u_r_j_m_1 = u_function(x - Constants.H, t + Constants.T_INTERVAL)
+    f_j = f_function(x, t)
+    f_r_j = f_function(x, t + Constants.T_INTERVAL)
+
+    u_t_approximation = (u_r_j - u_j)/Constants.T_INTERVAL
+    u_nlm_approximation = 0.5 * ((u_r_j_p_1 - (2 * u_r_j) + u_r_j_m_1 + u_j_p_1 - (2 * u_j)
+                                  + u_j_m_1) / math.pow(Constants.H, 2))
+    u_x_approximation = 0.5 * (u_r_j + u_j)
+    u_x_abs_approximation = 0.5 * (u_r_j_abs_sqr * u_r_j + u_j_abs_sqr * u_j)
+    f_approximation = 0.5 * (f_r_j + f_j)
+    right_side = complex(math.pow(Constants.A, 2), 1) * u_nlm_approximation\
+                 + complex(0, Constants.C) * u_x_approximation + complex(0, Constants.D)\
+                 * u_x_abs_approximation + f_approximation
+
+    residual = abs(u_t_approximation - right_side)
+
+    return residual
+
+
+def second_test(x, t):
+    u_j = u_function(x, t)
+    u_j_p_1 = u_function(x + Constants.H, t)
+    u_j_m_1 = u_function(x - Constants.H, t)
+
+    u_r_j = u_function(x, t + Constants.T_INTERVAL)
+    u_r_j_p_1 = u_function(x + Constants.H, t + Constants.T_INTERVAL)
+    u_r_j_m_1 = u_function(x - Constants.H, t + Constants.T_INTERVAL)
+
+    u_j_abs = u_abs_sqr(x, t)
+    u_r_j_abs = u_abs_sqr(x, t + Constants.T_INTERVAL)
+
+    c_big = c_function()
+    f_small = f_function(x, t)
+    f_r_small = f_function(x, t + Constants.T_INTERVAL)
+    f_big = f_big_function(u_j, u_j_p_1, u_j_m_1, u_r_j, u_j_abs, u_r_j_abs, f_small, f_r_small)
+    residual = abs(u_r_j_m_1 - (c_big * u_r_j) + u_r_j_p_1 + f_big)
+
+    return residual
